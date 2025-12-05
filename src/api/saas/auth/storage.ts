@@ -206,6 +206,115 @@ class SaasStorage implements ISaasStorage {
     });
     return instances;
   }
+
+  async getInstancesByRole(userId: string, userRole: UserRole) {
+    if (userRole === UserRole.SUPER_ADMIN) {
+      return this.getAllInstances();
+    }
+    
+    if (userRole === UserRole.ADMIN) {
+      return await prisma.instance.findMany({
+        where: { userId },
+        select: {
+          id: true,
+          name: true,
+          connectionStatus: true,
+          ownerJid: true,
+          profileName: true,
+          profilePicUrl: true,
+          integration: true,
+          number: true,
+          clientName: true,
+          createdAt: true,
+          updatedAt: true,
+          userId: true,
+          owner: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+    
+    return [];
+  }
+
+  async getUsersByRole(requesterRole: UserRole) {
+    if (requesterRole === UserRole.SUPER_ADMIN) {
+      return await prisma.saasUser.findMany({
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          profileImageUrl: true,
+          role: true,
+          createdAt: true,
+          updatedAt: true,
+          Subscription: true,
+          _count: {
+            select: { instances: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+    return [];
+  }
+
+  async getStatsByRole(userId: string, userRole: UserRole) {
+    if (userRole === UserRole.SUPER_ADMIN) {
+      return this.getStats();
+    }
+    
+    if (userRole === UserRole.ADMIN) {
+      const userInstances = await prisma.instance.count({
+        where: { userId }
+      });
+      const activeInstances = await prisma.instance.count({
+        where: { userId, connectionStatus: 'open' }
+      });
+      
+      return {
+        totalUsers: 1,
+        totalInstances: userInstances,
+        activeInstances,
+        subscriptionStats: []
+      };
+    }
+    
+    return {
+      totalUsers: 0,
+      totalInstances: 0,
+      activeInstances: 0,
+      subscriptionStats: []
+    };
+  }
+
+  async canAccessInstance(userId: string, userRole: UserRole, instanceId: string): Promise<boolean> {
+    if (userRole === UserRole.SUPER_ADMIN) {
+      return true;
+    }
+    
+    const instance = await prisma.instance.findUnique({
+      where: { id: instanceId },
+      select: { userId: true }
+    });
+    
+    return instance?.userId === userId;
+  }
+
+  async canAccessUser(requesterRole: UserRole, targetUserId: string, requesterId: string): Promise<boolean> {
+    if (requesterRole === UserRole.SUPER_ADMIN) {
+      return true;
+    }
+    return targetUserId === requesterId;
+  }
 }
 
 export const saasStorage = new SaasStorage();

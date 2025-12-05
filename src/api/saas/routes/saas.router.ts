@@ -84,7 +84,18 @@ saasRouter.post('/api/user/apikey/regenerate', isSaasAuthenticated, async (req: 
 
 saasRouter.get('/api/admin/users', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
   try {
-    const users = await saasStorage.getAllUsers();
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    if (user.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: "Only Super Admins can view all users" });
+    }
+    
+    const users = await saasStorage.getUsersByRole(user.role);
     res.json(users);
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -94,7 +105,14 @@ saasRouter.get('/api/admin/users', isSaasAuthenticated, isSaasAdmin, async (req:
 
 saasRouter.get('/api/admin/stats', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
   try {
-    const stats = await saasStorage.getStats();
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    const stats = await saasStorage.getStatsByRole(userId, user.role);
     res.json(stats);
   } catch (error) {
     console.error("Error fetching stats:", error);
@@ -104,11 +122,21 @@ saasRouter.get('/api/admin/stats', isSaasAuthenticated, isSaasAdmin, async (req:
 
 saasRouter.patch('/api/admin/users/:userId/role', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
   try {
+    const requesterId = req.user?.claims?.sub;
     const { userId } = req.params;
     const { role } = req.body;
     
+    const requester = await saasStorage.getUser(requesterId);
+    if (!requester || requester.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: "Only Super Admins can change user roles" });
+    }
+    
     if (!Object.values(UserRole).includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
+    }
+    
+    if (userId === requesterId) {
+      return res.status(400).json({ message: "Cannot change your own role" });
     }
     
     const user = await saasStorage.updateUserRole(userId, role);
@@ -121,7 +149,18 @@ saasRouter.patch('/api/admin/users/:userId/role', isSaasAuthenticated, isSaasAdm
 
 saasRouter.delete('/api/admin/users/:userId', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
   try {
+    const requesterId = req.user?.claims?.sub;
     const { userId } = req.params;
+    
+    const requester = await saasStorage.getUser(requesterId);
+    if (!requester || requester.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: "Only Super Admins can delete users" });
+    }
+    
+    if (userId === requesterId) {
+      return res.status(400).json({ message: "Cannot delete yourself" });
+    }
+    
     await saasStorage.deleteUser(userId);
     res.json({ message: "User deleted successfully" });
   } catch (error) {
@@ -132,11 +171,37 @@ saasRouter.delete('/api/admin/users/:userId', isSaasAuthenticated, isSaasAdmin, 
 
 saasRouter.get('/api/admin/instances', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
   try {
-    const instances = await saasStorage.getAllInstances();
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    const instances = await saasStorage.getInstancesByRole(userId, user.role);
     res.json(instances);
   } catch (error) {
     console.error("Error fetching instances:", error);
     res.status(500).json({ message: "Failed to fetch instances" });
+  }
+});
+
+saasRouter.get('/api/admin/role', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    res.json({ 
+      role: user.role,
+      isSuperAdmin: user.role === UserRole.SUPER_ADMIN 
+    });
+  } catch (error) {
+    console.error("Error fetching role:", error);
+    res.status(500).json({ message: "Failed to fetch role" });
   }
 });
 

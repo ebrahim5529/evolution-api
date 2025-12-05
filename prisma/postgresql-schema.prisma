@@ -22,6 +22,7 @@ enum InstanceConnectionStatus {
 enum UserRole {
   USER
   ADMIN
+  SUPER_ADMIN
 }
 
 enum SubscriptionPlan {
