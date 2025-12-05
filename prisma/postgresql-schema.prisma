@@ -825,3 +825,49 @@ model Subscription {
 
   @@index([stripeCustomerId])
 }
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE_INSTANCE
+  DELETE_INSTANCE
+  CONNECT_INSTANCE
+  DISCONNECT_INSTANCE
+  UPDATE_SETTINGS
+  UPDATE_ROLE
+  DELETE_USER
+  REGENERATE_API_KEY
+  WEBHOOK_SENT
+  MESSAGE_SENT
+  MESSAGE_RECEIVED
+  SYSTEM_ERROR
+  API_CALL
+}
+
+enum AuditSeverity {
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+model AuditLog {
+  id          String        @id @default(cuid())
+  action      AuditAction
+  severity    AuditSeverity @default(INFO)
+  userId      String?       @db.VarChar(100)
+  userEmail   String?       @db.VarChar(255)
+  instanceId  String?       @db.VarChar(100)
+  instanceName String?      @db.VarChar(255)
+  ipAddress   String?       @db.VarChar(50)
+  userAgent   String?       @db.VarChar(500)
+  details     Json?         @db.JsonB
+  metadata    Json?         @db.JsonB
+  createdAt   DateTime      @default(now()) @db.Timestamp
+
+  @@index([userId])
+  @@index([instanceId])
+  @@index([action])
+  @@index([createdAt])
+  @@index([severity])
+}

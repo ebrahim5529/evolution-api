@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { isSaasAuthenticated, isSaasAdmin } from '../auth/replitAuth';
 import { saasStorage } from '../auth/storage';
-import { UserRole } from '@prisma/client';
+import { UserRole, AuditAction } from '@prisma/client';
 import { join } from 'path';
 import { ROOT_DIR } from '@config/path.config';
+import { auditService } from '../audit/audit.service';
 
 const saasRouter = Router();
 
@@ -202,6 +203,68 @@ saasRouter.get('/api/admin/role', isSaasAuthenticated, isSaasAdmin, async (req: 
   } catch (error) {
     console.error("Error fetching role:", error);
     res.status(500).json({ message: "Failed to fetch role" });
+  }
+});
+
+saasRouter.get('/api/admin/audit', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: "Only Super Admins can view audit logs" });
+    }
+    
+    const { action, severity, startDate, endDate, limit, offset } = req.query;
+    
+    const filter: any = {};
+    if (action) filter.action = action as AuditAction;
+    if (severity) filter.severity = severity;
+    if (startDate) filter.startDate = new Date(startDate as string);
+    if (endDate) filter.endDate = new Date(endDate as string);
+    if (limit) filter.limit = parseInt(limit as string);
+    if (offset) filter.offset = parseInt(offset as string);
+    
+    const result = await auditService.getLogs(filter);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    res.status(500).json({ message: "Failed to fetch audit logs" });
+  }
+});
+
+saasRouter.get('/api/admin/audit/stats', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: "Only Super Admins can view audit stats" });
+    }
+    
+    const stats = await auditService.getStats();
+    res.json(stats);
+  } catch (error) {
+    console.error("Error fetching audit stats:", error);
+    res.status(500).json({ message: "Failed to fetch audit stats" });
+  }
+});
+
+saasRouter.get('/api/admin/audit/recent', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
+  try {
+    const userId = req.user?.claims?.sub;
+    const user = await saasStorage.getUser(userId);
+    
+    if (!user || user.role !== UserRole.SUPER_ADMIN) {
+      return res.status(403).json({ message: "Only Super Admins can view audit logs" });
+    }
+    
+    const limit = parseInt(req.query.limit as string) || 50;
+    const logs = await auditService.getRecentLogs(limit);
+    res.json(logs);
+  } catch (error) {
+    console.error("Error fetching recent audit logs:", error);
+    res.status(500).json({ message: "Failed to fetch recent audit logs" });
   }
 });
 

@@ -158,12 +158,13 @@ The API has been transformed into a complete SaaS platform with:
 **User Authentication:**
 - Replit Auth integration for user registration/login
 - JWT-based session management
-- Role-based access control (USER/ADMIN)
+- Role-based access control (SUPER_ADMIN/ADMIN/USER)
 
 **Database Tables:**
 - `SaasUser` - User accounts with API keys
 - `Subscription` - User subscription plans
 - `Instance.userId` - Links WhatsApp instances to users
+- `AuditLog` - Comprehensive audit logging for all actions
 
 **Authentication Types:**
 - `global` - Admin API key (full access)
@@ -187,14 +188,33 @@ PUT  /saas/users/:id       # Update user
 DELETE /saas/users/:id     # Delete user
 ```
 
+### Audit Log System (SUPER_ADMIN only)
+```
+GET  /api/admin/audit       # Get audit logs with filters (action, severity, dates)
+GET  /api/admin/audit/stats # Get audit statistics (total, today, warnings, errors)
+GET  /api/admin/audit/recent # Get recent audit logs
+```
+
+**Tracked Actions:**
+- LOGIN/LOGOUT - User authentication events
+- CREATE_INSTANCE/DELETE_INSTANCE - Instance management
+- CONNECT_INSTANCE/DISCONNECT_INSTANCE - WhatsApp connections
+- UPDATE_ROLE - User role changes
+- DELETE_USER - User deletions
+- REGENERATE_API_KEY - API key regenerations
+- SYSTEM_ERROR - System errors
+
+**Severity Levels:** INFO, WARNING, ERROR, CRITICAL
+
 ### Key Files
 - `src/api/saas/auth/replitAuth.ts` - Replit Auth integration
 - `src/api/saas/auth/storage.ts` - User storage/management
 - `src/api/saas/routes/saas.router.ts` - SaaS API routes
+- `src/api/saas/audit/audit.service.ts` - Audit logging service
 - `src/api/guards/auth.guard.ts` - Authentication guard
 - `public/landing.html` - Landing page
 - `public/dashboard/index.html` - User dashboard
-- `public/admin/index.html` - Admin panel
+- `public/admin/index.html` - Admin panel with audit log viewer
 
 ## Recent Setup (Dec 5, 2025)
 
@@ -211,6 +231,9 @@ DELETE /saas/users/:id     # Delete user
 10. ✅ Created landing page, dashboard, and admin panel
 11. ✅ Linked users to WhatsApp instances
 12. ✅ Fixed security issue with instance token scoping
+13. ✅ Implemented three-tier role system (SUPER_ADMIN/ADMIN/USER)
+14. ✅ Added comprehensive audit logging system
+15. ✅ Created audit log viewer in admin panel (SUPER_ADMIN only)
 
 ### Verified Working
 - Server starts successfully on port 5000
@@ -222,6 +245,7 @@ DELETE /saas/users/:id     # Delete user
 - SaaS authentication system working
 - User-to-instance linking working
 - Admin panel accessible
+- Audit log system functional with filters and statistics
 
 ## Support & Documentation
 - Official Documentation: https://doc.evolution-api.com
