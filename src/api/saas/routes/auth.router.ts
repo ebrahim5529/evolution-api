@@ -39,11 +39,16 @@ authRouter.post('/register', async (req: Request, res: Response) => {
       lastName,
     });
 
-    await emailService.sendVerificationEmail(email, result.verificationToken, username);
+    if (result.verificationToken) {
+      await emailService.sendVerificationEmail(email, result.verificationToken, username);
+    }
 
     res.status(201).json({
-      message: 'تم التسجيل بنجاح. يرجى تأكيد بريدك الإلكتروني.',
+      message: result.skipVerification 
+        ? 'تم التسجيل بنجاح. يمكنك تسجيل الدخول الآن.' 
+        : 'تم التسجيل بنجاح. يرجى تأكيد بريدك الإلكتروني.',
       user: result.user,
+      skipVerification: result.skipVerification,
     });
   } catch (error: any) {
     console.error('Registration error:', error);

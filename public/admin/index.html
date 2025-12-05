@@ -109,9 +109,9 @@
                         <a href="/dashboard" class="flex-1 text-center py-2 px-3 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm transition">
                             <i class="fas fa-home ml-1"></i> لوحة التحكم
                         </a>
-                        <a href="/api/logout" class="py-2 px-3 bg-accent-rose/20 hover:bg-accent-rose/30 text-accent-rose rounded-lg text-sm transition">
+                        <button onclick="logout()" class="py-2 px-3 bg-accent-rose/20 hover:bg-accent-rose/30 text-accent-rose rounded-lg text-sm transition">
                             <i class="fas fa-sign-out-alt"></i>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -534,6 +534,14 @@
         let usersChart = null;
         let plansChart = null;
 
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
         function updateTime() {
             const now = new Date();
             document.getElementById('current-time').textContent = now.toLocaleString('ar-SA', { 
@@ -547,9 +555,19 @@
 
         async function checkAdmin() {
             try {
-                const response = await fetch('/api/auth/user');
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                const response = await fetch('/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!response.ok) {
-                    window.location.href = '/landing';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
                     return;
                 }
                 currentUser = await response.json();
@@ -585,7 +603,7 @@
 
         async function loadStats() {
             try {
-                const response = await fetch('/api/admin/stats');
+                const response = await fetch('/api/admin/stats', { headers: getAuthHeaders() });
                 if (response.ok) {
                     const stats = await response.json();
                     
@@ -624,7 +642,7 @@
 
         async function loadUsers() {
             try {
-                const response = await fetch('/api/admin/users');
+                const response = await fetch('/api/admin/users', { headers: getAuthHeaders() });
                 if (response.ok) {
                     allUsers = await response.json();
                     displayUsers(allUsers);
@@ -638,7 +656,7 @@
 
         async function loadInstances() {
             try {
-                const response = await fetch('/api/admin/instances');
+                const response = await fetch('/api/admin/instances', { headers: getAuthHeaders() });
                 if (response.ok) {
                     allInstances = await response.json();
                     displayInstances(allInstances);
@@ -827,8 +845,8 @@
                 if (severity) url += `&severity=${severity}`;
                 
                 const [logsRes, statsRes] = await Promise.all([
-                    fetch(url),
-                    fetch('/api/admin/audit/stats')
+                    fetch(url, { headers: getAuthHeaders() }),
+                    fetch('/api/admin/audit/stats', { headers: getAuthHeaders() })
                 ]);
                 
                 if (logsRes.ok) {
@@ -1080,7 +1098,7 @@
             try {
                 const response = await fetch(`/api/admin/users/${userId}/role`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ role: 'ADMIN' })
                 });
                 if (response.ok) {
@@ -1097,7 +1115,7 @@
             try {
                 const response = await fetch(`/api/admin/users/${userId}/role`, {
                     method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify({ role: 'USER' })
                 });
                 if (response.ok) {
@@ -1113,7 +1131,8 @@
             if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف جميع بياناته.')) return;
             try {
                 const response = await fetch(`/api/admin/users/${userId}`, {
-                    method: 'DELETE'
+                    method: 'DELETE',
+                    headers: getAuthHeaders()
                 });
                 if (response.ok) {
                     closeModal();
@@ -1122,6 +1141,12 @@
             } catch (error) {
                 console.error('Error:', error);
             }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
         }
 
         function toggleSidebar() {

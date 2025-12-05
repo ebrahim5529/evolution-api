@@ -12,6 +12,7 @@ if (!JWT_SECRET) {
 const getJwtSecret = () => JWT_SECRET || `evo-${Date.now()}-fallback-dev-only`;
 const JWT_EXPIRES_IN = '7d';
 const TRIAL_DAYS = 4;
+const SKIP_EMAIL_VERIFICATION = true; // Set to false to enable email verification
 
 export interface RegisterData {
   username: string;
@@ -68,12 +69,27 @@ export class EmailAuthService {
         firstName: data.firstName,
         lastName: data.lastName,
         apiKey: generateApiKey(),
-        verificationToken,
-        verificationTokenExpiry,
-        emailVerified: false,
+        verificationToken: SKIP_EMAIL_VERIFICATION ? null : verificationToken,
+        verificationTokenExpiry: SKIP_EMAIL_VERIFICATION ? null : verificationTokenExpiry,
+        emailVerified: SKIP_EMAIL_VERIFICATION ? true : false,
         role: UserRole.USER,
       }
     });
+
+    // If skipping email verification, create trial subscription immediately
+    if (SKIP_EMAIL_VERIFICATION) {
+      const trialEndDate = getTrialEndDate();
+      await prisma.subscription.create({
+        data: {
+          userId: user.id,
+          status: SubscriptionStatus.TRIAL,
+          plan: SubscriptionPlan.FREE,
+          maxInstances: 1,
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: trialEndDate,
+        }
+      });
+    }
 
     return {
       user: {
@@ -83,7 +99,8 @@ export class EmailAuthService {
         firstName: user.firstName,
         lastName: user.lastName,
       },
-      verificationToken,
+      verificationToken: SKIP_EMAIL_VERIFICATION ? null : verificationToken,
+      skipVerification: SKIP_EMAIL_VERIFICATION,
     };
   }
 
@@ -152,7 +169,7 @@ export class EmailAuthService {
       throw new Error('بيانات الدخول غير صحيحة');
     }
 
-    if (!user.emailVerified) {
+    if (!SKIP_EMAIL_VERIFICATION && !user.emailVerified) {
       throw new Error('يجب تأكيد البريد الإلكتروني أولاً');
     }
 

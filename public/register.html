@@ -245,13 +245,25 @@
           throw new Error(data.message || 'فشل في التسجيل');
         }
 
-        successDiv.innerHTML = `
-          <strong>تم التسجيل بنجاح!</strong><br>
-          تم إرسال رابط تأكيد إلى بريدك الإلكتروني.<br>
-          يرجى التحقق من بريدك لتفعيل حسابك.
-        `;
-        successDiv.style.display = 'block';
-        form.style.display = 'none';
+        if (data.skipVerification) {
+          successDiv.innerHTML = `
+            <strong>تم التسجيل بنجاح!</strong><br>
+            جاري تحويلك لتسجيل الدخول...
+          `;
+          successDiv.style.display = 'block';
+          form.style.display = 'none';
+          setTimeout(() => {
+            window.location.href = '/login?registered=true';
+          }, 1500);
+        } else {
+          successDiv.innerHTML = `
+            <strong>تم التسجيل بنجاح!</strong><br>
+            تم إرسال رابط تأكيد إلى بريدك الإلكتروني.<br>
+            يرجى التحقق من بريدك لتفعيل حسابك.
+          `;
+          successDiv.style.display = 'block';
+          form.style.display = 'none';
+        }
       } catch (error) {
         errorDiv.textContent = error.message;
         errorDiv.style.display = 'block';

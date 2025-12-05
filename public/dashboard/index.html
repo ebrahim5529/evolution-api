@@ -36,9 +36,9 @@
                                 <img id="user-avatar" src="" alt="" class="h-8 w-8 rounded-full">
                                 <span id="user-name" class="mr-2 text-sm"></span>
                             </div>
-                            <a href="/api/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
+                            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
                                 تسجيل الخروج
-                            </a>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -133,18 +133,36 @@
     <script>
         let currentUser = null;
 
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
         async function loadUser() {
             try {
-                const response = await fetch('/api/auth/user');
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = '/login';
+                    return;
+                }
+
+                const response = await fetch('/auth/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 if (!response.ok) {
-                    window.location.href = '/landing';
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
                     return;
                 }
                 currentUser = await response.json();
                 displayUser();
             } catch (error) {
                 console.error('Error loading user:', error);
-                window.location.href = '/landing';
+                window.location.href = '/login';
             }
         }
 
@@ -167,7 +185,7 @@
 
         async function loadInstances() {
             try {
-                const response = await fetch('/api/user/instances');
+                const response = await fetch('/api/user/instances', { headers: getAuthHeaders() });
                 if (response.ok) {
                     const instances = await response.json();
                     document.getElementById('instances-count').textContent = instances.length;
@@ -203,7 +221,7 @@
 
         async function loadSubscription() {
             try {
-                const response = await fetch('/api/user/subscription');
+                const response = await fetch('/api/user/subscription', { headers: getAuthHeaders() });
                 if (response.ok) {
                     const subscription = await response.json();
                     document.getElementById('subscription-plan').textContent = subscription?.plan || 'FREE';
@@ -224,7 +242,10 @@
                 return;
             }
             try {
-                const response = await fetch('/api/user/apikey/regenerate', { method: 'POST' });
+                const response = await fetch('/api/user/apikey/regenerate', { 
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
                 if (response.ok) {
                     const data = await response.json();
                     document.getElementById('api-key').textContent = data.apiKey.substring(0, 15) + '...';
@@ -235,6 +256,12 @@
                 console.error('Error regenerating API key:', error);
                 alert('حدث خطأ أثناء تجديد مفتاح API');
             }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
         }
 
         loadUser();

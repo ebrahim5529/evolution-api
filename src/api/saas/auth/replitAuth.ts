@@ -131,9 +131,25 @@ export async function setupSaasAuth(app: Express) {
   });
 }
 
-export const isSaasAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
+import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET || 'evo-fallback-dev-only';
+
+export const isSaasAuthenticated: RequestHandler = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      (req as any).user = { claims: { sub: decoded.userId }, jwtUser: decoded };
+      return next();
+    } catch (error) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+  }
+
+  const user = req.user as any;
   if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
@@ -163,13 +179,20 @@ export const isSaasAuthenticated: RequestHandler = async (req, res, next) => {
 export const isSaasAdmin: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
   
+  if (user?.jwtUser) {
+    if (user.jwtUser.role === 'ADMIN' || user.jwtUser.role === 'SUPER_ADMIN') {
+      return next();
+    }
+    return res.status(403).json({ message: "Forbidden: Admin access required" });
+  }
+  
   if (!user?.claims?.sub) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
     const dbUser = await saasStorage.getUser(user.claims.sub);
-    if (!dbUser || dbUser.role !== 'ADMIN') {
+    if (!dbUser || (dbUser.role !== 'ADMIN' && dbUser.role !== 'SUPER_ADMIN')) {
       return res.status(403).json({ message: "Forbidden: Admin access required" });
     }
     return next();
