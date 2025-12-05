@@ -5,96 +5,440 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Evolution SaaS - لوحة الإدارة</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+                    colors: {
+                        dark: { 900: '#0a0a0f', 800: '#12121a', 700: '#1a1a25', 600: '#252532', 500: '#32323f' },
+                        accent: { purple: '#8b5cf6', blue: '#3b82f6', emerald: '#10b981', amber: '#f59e0b', rose: '#f43f5e' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
         body { font-family: 'Cairo', sans-serif; }
-        .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
-        .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-item.active { background: linear-gradient(90deg, rgba(139,92,246,0.2) 0%, transparent 100%); border-right: 3px solid #8b5cf6; }
+        .stat-card { background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%); }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .glass { background: rgba(255,255,255,0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.05); }
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #32323f; border-radius: 4px; }
+        .pulse-dot { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-backdrop { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
     </style>
 </head>
-<body class="gradient-bg min-h-screen text-white">
+<body class="bg-dark-900 text-white min-h-screen font-cairo">
     <div id="app">
         <div id="loading" class="flex items-center justify-center min-h-screen">
             <div class="text-center">
-                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
-                <p class="text-gray-400">جاري التحميل...</p>
+                <div class="relative">
+                    <div class="w-20 h-20 border-4 border-dark-600 rounded-full"></div>
+                    <div class="w-20 h-20 border-4 border-accent-purple border-t-transparent rounded-full animate-spin absolute top-0"></div>
+                </div>
+                <p class="text-gray-400 mt-6 text-lg">جاري تحميل لوحة الإدارة...</p>
             </div>
         </div>
 
         <div id="admin-panel" class="hidden">
-            <nav class="bg-black/30 border-b border-white/10">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex items-center">
-                            <img src="/images/evolution-logo.png" alt="Evolution API" class="h-8 w-auto">
-                            <span class="mr-3 text-xl font-bold text-purple-400">لوحة الإدارة</span>
+            <aside id="sidebar" class="fixed right-0 top-0 h-full w-64 bg-dark-800 border-l border-dark-600 z-50 transition-all duration-300">
+                <div class="p-6 border-b border-dark-600">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gradient-to-br from-accent-purple to-accent-blue rounded-xl flex items-center justify-center">
+                            <i class="fas fa-bolt text-white"></i>
                         </div>
-                        <div class="flex items-center space-x-4 space-x-reverse">
-                            <a href="/dashboard" class="text-gray-300 hover:text-white transition">لوحة التحكم</a>
-                            <a href="/api/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
-                                تسجيل الخروج
-                            </a>
+                        <div>
+                            <h1 class="font-bold text-lg">Evolution</h1>
+                            <p class="text-xs text-gray-500">لوحة الإدارة</p>
                         </div>
                     </div>
                 </div>
-            </nav>
 
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <div class="card rounded-xl p-6">
-                        <p class="text-gray-400 text-sm">إجمالي المستخدمين</p>
-                        <p id="total-users" class="text-3xl font-bold text-purple-400">0</p>
+                <nav class="p-4 space-y-1">
+                    <a href="#" onclick="showPage('dashboard')" class="sidebar-item active flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-dark-700 transition-all">
+                        <i class="fas fa-chart-pie w-5"></i>
+                        <span>الرئيسية</span>
+                    </a>
+                    <a href="#" onclick="showPage('users')" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-dark-700 transition-all">
+                        <i class="fas fa-users w-5"></i>
+                        <span>المستخدمين</span>
+                        <span id="users-badge" class="mr-auto bg-accent-purple/20 text-accent-purple text-xs px-2 py-0.5 rounded-full">0</span>
+                    </a>
+                    <a href="#" onclick="showPage('instances')" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-dark-700 transition-all">
+                        <i class="fab fa-whatsapp w-5"></i>
+                        <span>الأجهزة</span>
+                        <span id="instances-badge" class="mr-auto bg-accent-emerald/20 text-accent-emerald text-xs px-2 py-0.5 rounded-full">0</span>
+                    </a>
+                    <a href="#" onclick="showPage('subscriptions')" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-dark-700 transition-all">
+                        <i class="fas fa-crown w-5"></i>
+                        <span>الاشتراكات</span>
+                    </a>
+                    <a href="#" onclick="showPage('logs')" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-dark-700 transition-all">
+                        <i class="fas fa-history w-5"></i>
+                        <span>سجل النشاط</span>
+                    </a>
+                    <a href="#" onclick="showPage('settings')" class="sidebar-item flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:text-white hover:bg-dark-700 transition-all">
+                        <i class="fas fa-cog w-5"></i>
+                        <span>الإعدادات</span>
+                    </a>
+                </nav>
+
+                <div class="absolute bottom-0 right-0 left-0 p-4 border-t border-dark-600">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img id="admin-avatar" src="/images/evolution-logo.png" class="w-10 h-10 rounded-full border-2 border-dark-600">
+                        <div class="flex-1 min-w-0">
+                            <p id="admin-name" class="font-semibold truncate">المدير</p>
+                            <p class="text-xs text-accent-purple">مدير النظام</p>
+                        </div>
                     </div>
-                    <div class="card rounded-xl p-6">
-                        <p class="text-gray-400 text-sm">إجمالي الأجهزة</p>
-                        <p id="total-instances" class="text-3xl font-bold text-emerald-400">0</p>
+                    <div class="flex gap-2">
+                        <a href="/dashboard" class="flex-1 text-center py-2 px-3 bg-dark-700 hover:bg-dark-600 rounded-lg text-sm transition">
+                            <i class="fas fa-home ml-1"></i> لوحة التحكم
+                        </a>
+                        <a href="/api/logout" class="py-2 px-3 bg-accent-rose/20 hover:bg-accent-rose/30 text-accent-rose rounded-lg text-sm transition">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </a>
                     </div>
-                    <div class="card rounded-xl p-6">
-                        <p class="text-gray-400 text-sm">الأجهزة المتصلة</p>
-                        <p id="active-instances" class="text-3xl font-bold text-blue-400">0</p>
+                </div>
+            </aside>
+
+            <main class="mr-64 min-h-screen">
+                <header class="sticky top-0 z-40 glass border-b border-dark-600">
+                    <div class="flex items-center justify-between px-6 py-4">
+                        <div class="flex items-center gap-4">
+                            <button onclick="toggleSidebar()" class="lg:hidden p-2 hover:bg-dark-700 rounded-lg">
+                                <i class="fas fa-bars"></i>
+                            </button>
+                            <div class="relative">
+                                <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                                <input type="text" id="global-search" placeholder="بحث..." class="bg-dark-700 border border-dark-600 rounded-xl pr-10 pl-4 py-2 w-80 focus:outline-none focus:border-accent-purple transition">
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <div class="flex items-center gap-2 text-sm">
+                                <span class="w-2 h-2 bg-accent-emerald rounded-full pulse-dot"></span>
+                                <span class="text-gray-400">النظام يعمل</span>
+                            </div>
+                            <button class="relative p-2 hover:bg-dark-700 rounded-lg">
+                                <i class="fas fa-bell text-gray-400"></i>
+                                <span class="absolute top-1 left-1 w-2 h-2 bg-accent-rose rounded-full"></span>
+                            </button>
+                            <div class="h-8 w-px bg-dark-600"></div>
+                            <span id="current-time" class="text-gray-400 text-sm"></span>
+                        </div>
                     </div>
-                    <div class="card rounded-xl p-6">
-                        <p class="text-gray-400 text-sm">اشتراكات Pro</p>
-                        <p id="pro-subscriptions" class="text-3xl font-bold text-yellow-400">0</p>
+                </header>
+
+                <div id="page-dashboard" class="page p-6 fade-in">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold mb-2">مرحباً بك في لوحة الإدارة</h2>
+                        <p class="text-gray-400">نظرة عامة على أداء المنصة</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="stat-card rounded-2xl p-6 border border-dark-600 transition-all duration-300">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-accent-purple/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-users text-accent-purple text-xl"></i>
+                                </div>
+                                <span class="text-accent-emerald text-sm"><i class="fas fa-arrow-up ml-1"></i>12%</span>
+                            </div>
+                            <p class="text-gray-400 text-sm mb-1">إجمالي المستخدمين</p>
+                            <p id="stat-users" class="text-3xl font-bold">0</p>
+                        </div>
+
+                        <div class="stat-card rounded-2xl p-6 border border-dark-600 transition-all duration-300">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-accent-emerald/20 rounded-xl flex items-center justify-center">
+                                    <i class="fab fa-whatsapp text-accent-emerald text-xl"></i>
+                                </div>
+                                <span class="text-accent-emerald text-sm"><i class="fas fa-arrow-up ml-1"></i>8%</span>
+                            </div>
+                            <p class="text-gray-400 text-sm mb-1">إجمالي الأجهزة</p>
+                            <p id="stat-instances" class="text-3xl font-bold">0</p>
+                        </div>
+
+                        <div class="stat-card rounded-2xl p-6 border border-dark-600 transition-all duration-300">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-accent-blue/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-link text-accent-blue text-xl"></i>
+                                </div>
+                                <span id="connection-rate" class="text-accent-emerald text-sm">0%</span>
+                            </div>
+                            <p class="text-gray-400 text-sm mb-1">الأجهزة المتصلة</p>
+                            <p id="stat-active" class="text-3xl font-bold">0</p>
+                        </div>
+
+                        <div class="stat-card rounded-2xl p-6 border border-dark-600 transition-all duration-300">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="w-12 h-12 bg-accent-amber/20 rounded-xl flex items-center justify-center">
+                                    <i class="fas fa-crown text-accent-amber text-xl"></i>
+                                </div>
+                                <span class="text-accent-amber text-sm"><i class="fas fa-star ml-1"></i>PRO</span>
+                            </div>
+                            <p class="text-gray-400 text-sm mb-1">اشتراكات Pro</p>
+                            <p id="stat-pro" class="text-3xl font-bold">0</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                        <div class="lg:col-span-2 glass rounded-2xl p-6 border border-dark-600">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-bold text-lg">نمو المستخدمين</h3>
+                                <select class="bg-dark-700 border border-dark-600 rounded-lg px-3 py-1 text-sm">
+                                    <option>آخر 7 أيام</option>
+                                    <option>آخر 30 يوم</option>
+                                    <option>آخر 90 يوم</option>
+                                </select>
+                            </div>
+                            <canvas id="usersChart" height="200"></canvas>
+                        </div>
+
+                        <div class="glass rounded-2xl p-6 border border-dark-600">
+                            <h3 class="font-bold text-lg mb-6">توزيع الخطط</h3>
+                            <canvas id="plansChart" height="200"></canvas>
+                            <div class="mt-4 space-y-2">
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="flex items-center gap-2"><span class="w-3 h-3 bg-gray-500 rounded-full"></span> مجاني</span>
+                                    <span id="plan-free" class="font-bold">0</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="flex items-center gap-2"><span class="w-3 h-3 bg-accent-blue rounded-full"></span> أساسي</span>
+                                    <span id="plan-basic" class="font-bold">0</span>
+                                </div>
+                                <div class="flex items-center justify-between text-sm">
+                                    <span class="flex items-center gap-2"><span class="w-3 h-3 bg-accent-amber rounded-full"></span> احترافي</span>
+                                    <span id="plan-pro" class="font-bold">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass rounded-2xl p-6 border border-dark-600">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="font-bold text-lg">أحدث المستخدمين</h3>
+                            <a href="#" onclick="showPage('users')" class="text-accent-purple hover:text-accent-purple/80 text-sm">عرض الكل <i class="fas fa-arrow-left mr-1"></i></a>
+                        </div>
+                        <div id="recent-users" class="space-y-4"></div>
                     </div>
                 </div>
 
-                <div class="card rounded-xl p-6">
-                    <h2 class="text-xl font-bold mb-6">إدارة المستخدمين</h2>
-                    <div class="overflow-x-auto">
-                        <table class="w-full">
-                            <thead>
-                                <tr class="text-gray-400 text-sm border-b border-white/10">
-                                    <th class="text-right py-3 px-4">المستخدم</th>
-                                    <th class="text-right py-3 px-4">البريد الإلكتروني</th>
-                                    <th class="text-right py-3 px-4">الدور</th>
-                                    <th class="text-right py-3 px-4">الخطة</th>
-                                    <th class="text-right py-3 px-4">الأجهزة</th>
-                                    <th class="text-right py-3 px-4">تاريخ التسجيل</th>
-                                    <th class="text-right py-3 px-4">الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table">
-                            </tbody>
-                        </table>
+                <div id="page-users" class="page hidden p-6 fade-in">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">إدارة المستخدمين</h2>
+                            <p class="text-gray-400">إدارة جميع مستخدمي المنصة</p>
+                        </div>
+                        <button onclick="showAddUserModal()" class="bg-accent-purple hover:bg-accent-purple/80 px-4 py-2 rounded-xl transition flex items-center gap-2">
+                            <i class="fas fa-plus"></i>
+                            إضافة مستخدم
+                        </button>
+                    </div>
+
+                    <div class="glass rounded-2xl border border-dark-600 overflow-hidden">
+                        <div class="p-4 border-b border-dark-600 flex flex-wrap gap-4">
+                            <div class="relative flex-1 min-w-[200px]">
+                                <i class="fas fa-search absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                                <input type="text" id="user-search" placeholder="بحث بالاسم أو البريد..." class="w-full bg-dark-700 border border-dark-600 rounded-xl pr-10 pl-4 py-2 focus:outline-none focus:border-accent-purple" onkeyup="filterUsers()">
+                            </div>
+                            <select id="role-filter" class="bg-dark-700 border border-dark-600 rounded-xl px-4 py-2" onchange="filterUsers()">
+                                <option value="">كل الأدوار</option>
+                                <option value="ADMIN">مدير</option>
+                                <option value="USER">مستخدم</option>
+                            </select>
+                            <select id="plan-filter" class="bg-dark-700 border border-dark-600 rounded-xl px-4 py-2" onchange="filterUsers()">
+                                <option value="">كل الخطط</option>
+                                <option value="FREE">مجاني</option>
+                                <option value="BASIC">أساسي</option>
+                                <option value="PRO">احترافي</option>
+                            </select>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="bg-dark-700/50 text-gray-400 text-sm">
+                                        <th class="text-right py-4 px-6 font-medium">
+                                            <input type="checkbox" id="select-all" class="rounded bg-dark-600 border-dark-500">
+                                        </th>
+                                        <th class="text-right py-4 px-6 font-medium">المستخدم</th>
+                                        <th class="text-right py-4 px-6 font-medium">البريد الإلكتروني</th>
+                                        <th class="text-right py-4 px-6 font-medium">الدور</th>
+                                        <th class="text-right py-4 px-6 font-medium">الخطة</th>
+                                        <th class="text-right py-4 px-6 font-medium">الأجهزة</th>
+                                        <th class="text-right py-4 px-6 font-medium">تاريخ التسجيل</th>
+                                        <th class="text-right py-4 px-6 font-medium">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table" class="divide-y divide-dark-600"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-4 border-t border-dark-600 flex items-center justify-between">
+                            <p class="text-gray-400 text-sm">عرض <span id="showing-count">0</span> من <span id="total-count">0</span> مستخدم</p>
+                            <div class="flex gap-2">
+                                <button class="px-3 py-1 bg-dark-700 rounded-lg hover:bg-dark-600 disabled:opacity-50" disabled>
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                                <button class="px-3 py-1 bg-accent-purple rounded-lg">1</button>
+                                <button class="px-3 py-1 bg-dark-700 rounded-lg hover:bg-dark-600 disabled:opacity-50" disabled>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+
+                <div id="page-instances" class="page hidden p-6 fade-in">
+                    <div class="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 class="text-2xl font-bold mb-2">إدارة الأجهزة</h2>
+                            <p class="text-gray-400">جميع أجهزة WhatsApp المتصلة</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="flex items-center gap-2 text-sm bg-accent-emerald/20 text-accent-emerald px-3 py-1 rounded-full">
+                                <span class="w-2 h-2 bg-accent-emerald rounded-full pulse-dot"></span>
+                                <span id="online-count">0</span> متصل
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="instances-grid"></div>
+                </div>
+
+                <div id="page-subscriptions" class="page hidden p-6 fade-in">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold mb-2">إدارة الاشتراكات</h2>
+                        <p class="text-gray-400">عرض وإدارة اشتراكات المستخدمين</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="glass rounded-2xl p-6 border border-dark-600 text-center">
+                            <div class="w-16 h-16 bg-gray-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-user text-gray-400 text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">مجاني</h3>
+                            <p class="text-4xl font-bold text-gray-400 mb-4" id="sub-free">0</p>
+                            <p class="text-gray-500 text-sm">جهاز واحد</p>
+                        </div>
+                        <div class="glass rounded-2xl p-6 border border-accent-blue/30 text-center">
+                            <div class="w-16 h-16 bg-accent-blue/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-rocket text-accent-blue text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">أساسي</h3>
+                            <p class="text-4xl font-bold text-accent-blue mb-4" id="sub-basic">0</p>
+                            <p class="text-gray-500 text-sm">5 أجهزة</p>
+                        </div>
+                        <div class="glass rounded-2xl p-6 border border-accent-amber/30 text-center">
+                            <div class="w-16 h-16 bg-accent-amber/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-crown text-accent-amber text-2xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2">احترافي</h3>
+                            <p class="text-4xl font-bold text-accent-amber mb-4" id="sub-pro">0</p>
+                            <p class="text-gray-500 text-sm">غير محدود</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="page-logs" class="page hidden p-6 fade-in">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold mb-2">سجل النشاط</h2>
+                        <p class="text-gray-400">تتبع جميع الأنشطة على المنصة</p>
+                    </div>
+
+                    <div class="glass rounded-2xl border border-dark-600 p-6">
+                        <div class="text-center py-12 text-gray-500">
+                            <i class="fas fa-history text-4xl mb-4"></i>
+                            <p>سيتم إضافة سجل النشاط قريباً</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="page-settings" class="page hidden p-6 fade-in">
+                    <div class="mb-8">
+                        <h2 class="text-2xl font-bold mb-2">الإعدادات</h2>
+                        <p class="text-gray-400">إعدادات المنصة العامة</p>
+                    </div>
+
+                    <div class="glass rounded-2xl border border-dark-600 p-6">
+                        <div class="space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">اسم المنصة</label>
+                                <input type="text" value="Evolution SaaS" class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 focus:outline-none focus:border-accent-purple">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">البريد الإلكتروني للدعم</label>
+                                <input type="email" placeholder="support@example.com" class="w-full bg-dark-700 border border-dark-600 rounded-xl px-4 py-3 focus:outline-none focus:border-accent-purple">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="font-medium">تفعيل التسجيل</p>
+                                    <p class="text-sm text-gray-500">السماح للمستخدمين الجدد بالتسجيل</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer" checked>
+                                    <div class="w-11 h-6 bg-dark-600 peer-focus:ring-2 peer-focus:ring-accent-purple rounded-full peer peer-checked:after:translate-x-full peer-checked:after:-translate-x-full after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent-purple"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
         </div>
 
         <div id="forbidden" class="hidden flex items-center justify-center min-h-screen">
             <div class="text-center">
-                <h1 class="text-4xl font-bold text-red-500 mb-4">غير مصرح</h1>
-                <p class="text-gray-400 mb-6">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
-                <a href="/dashboard" class="bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-lg transition">
+                <div class="w-24 h-24 bg-accent-rose/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-lock text-accent-rose text-4xl"></i>
+                </div>
+                <h1 class="text-3xl font-bold mb-4">غير مصرح</h1>
+                <p class="text-gray-400 mb-8">ليس لديك صلاحية للوصول إلى هذه الصفحة</p>
+                <a href="/dashboard" class="bg-accent-purple hover:bg-accent-purple/80 px-6 py-3 rounded-xl transition inline-flex items-center gap-2">
+                    <i class="fas fa-home"></i>
                     العودة إلى لوحة التحكم
                 </a>
             </div>
         </div>
     </div>
 
+    <div id="user-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center">
+        <div class="bg-dark-800 rounded-2xl border border-dark-600 w-full max-w-lg m-4">
+            <div class="flex items-center justify-between p-6 border-b border-dark-600">
+                <h3 id="modal-title" class="text-xl font-bold">تفاصيل المستخدم</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="p-6"></div>
+        </div>
+    </div>
+
     <script>
         let currentUser = null;
+        let allUsers = [];
+        let allInstances = [];
+        let usersChart = null;
+        let plansChart = null;
+
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleString('ar-SA', { 
+                weekday: 'long', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+        }
+        setInterval(updateTime, 1000);
+        updateTime();
 
         async function checkAdmin() {
             try {
@@ -111,10 +455,16 @@
                     return;
                 }
 
+                document.getElementById('admin-name').textContent = `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || 'المدير';
+                if (currentUser.profileImageUrl) {
+                    document.getElementById('admin-avatar').src = currentUser.profileImageUrl;
+                }
+
                 document.getElementById('loading').classList.add('hidden');
                 document.getElementById('admin-panel').classList.remove('hidden');
-                loadStats();
-                loadUsers();
+                
+                await Promise.all([loadStats(), loadUsers(), loadInstances()]);
+                initCharts();
             } catch (error) {
                 console.error('Error:', error);
                 window.location.href = '/landing';
@@ -126,12 +476,34 @@
                 const response = await fetch('/api/admin/stats');
                 if (response.ok) {
                     const stats = await response.json();
-                    document.getElementById('total-users').textContent = stats.totalUsers;
-                    document.getElementById('total-instances').textContent = stats.totalInstances;
-                    document.getElementById('active-instances').textContent = stats.activeInstances;
                     
-                    const proCount = stats.subscriptionStats.find(s => s.plan === 'PRO')?._count?.plan || 0;
-                    document.getElementById('pro-subscriptions').textContent = proCount;
+                    document.getElementById('stat-users').textContent = stats.totalUsers;
+                    document.getElementById('stat-instances').textContent = stats.totalInstances;
+                    document.getElementById('stat-active').textContent = stats.activeInstances;
+                    document.getElementById('users-badge').textContent = stats.totalUsers;
+                    document.getElementById('instances-badge').textContent = stats.totalInstances;
+                    
+                    const connectionRate = stats.totalInstances > 0 
+                        ? Math.round((stats.activeInstances / stats.totalInstances) * 100) 
+                        : 0;
+                    document.getElementById('connection-rate').textContent = connectionRate + '%';
+                    
+                    let proCount = 0, basicCount = 0, freeCount = 0;
+                    if (stats.subscriptionStats) {
+                        stats.subscriptionStats.forEach(s => {
+                            if (s.plan === 'PRO') proCount = s._count?.plan || 0;
+                            else if (s.plan === 'BASIC') basicCount = s._count?.plan || 0;
+                            else freeCount = s._count?.plan || 0;
+                        });
+                    }
+                    
+                    document.getElementById('stat-pro').textContent = proCount;
+                    document.getElementById('plan-free').textContent = freeCount || stats.totalUsers - proCount - basicCount;
+                    document.getElementById('plan-basic').textContent = basicCount;
+                    document.getElementById('plan-pro').textContent = proCount;
+                    document.getElementById('sub-free').textContent = freeCount || stats.totalUsers - proCount - basicCount;
+                    document.getElementById('sub-basic').textContent = basicCount;
+                    document.getElementById('sub-pro').textContent = proCount;
                 }
             } catch (error) {
                 console.error('Error loading stats:', error);
@@ -142,53 +514,85 @@
             try {
                 const response = await fetch('/api/admin/users');
                 if (response.ok) {
-                    const users = await response.json();
-                    displayUsers(users);
+                    allUsers = await response.json();
+                    displayUsers(allUsers);
+                    displayRecentUsers(allUsers.slice(0, 5));
+                    document.getElementById('total-count').textContent = allUsers.length;
                 }
             } catch (error) {
                 console.error('Error loading users:', error);
             }
         }
 
+        async function loadInstances() {
+            try {
+                const response = await fetch('/api/admin/instances');
+                if (response.ok) {
+                    allInstances = await response.json();
+                    displayInstances(allInstances);
+                    const onlineCount = allInstances.filter(i => i.connectionStatus === 'open').length;
+                    document.getElementById('online-count').textContent = onlineCount;
+                }
+            } catch (error) {
+                console.error('Error loading instances:', error);
+            }
+        }
+
         function displayUsers(users) {
             const tbody = document.getElementById('users-table');
+            document.getElementById('showing-count').textContent = users.length;
+            
+            if (users.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="py-12 text-center text-gray-500">
+                            <i class="fas fa-users text-4xl mb-4"></i>
+                            <p>لا يوجد مستخدمين</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
             tbody.innerHTML = users.map(user => `
-                <tr class="border-b border-white/5 hover:bg-white/5">
-                    <td class="py-4 px-4">
-                        <div class="flex items-center">
-                            <img src="${user.profileImageUrl || '/images/evolution-logo.png'}" alt="" class="h-10 w-10 rounded-full ml-3">
+                <tr class="hover:bg-dark-700/50 transition-colors">
+                    <td class="py-4 px-6">
+                        <input type="checkbox" class="user-checkbox rounded bg-dark-600 border-dark-500" data-id="${user.id}">
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-3">
+                            <img src="${user.profileImageUrl || '/images/evolution-logo.png'}" alt="" class="w-10 h-10 rounded-full border-2 border-dark-600">
                             <div>
                                 <p class="font-semibold">${user.firstName || ''} ${user.lastName || ''}</p>
-                                <p class="text-sm text-gray-400">${user.id}</p>
+                                <p class="text-xs text-gray-500">#${user.id}</p>
                             </div>
                         </div>
                     </td>
-                    <td class="py-4 px-4 text-gray-300">${user.email || '-'}</td>
-                    <td class="py-4 px-4">
-                        <span class="px-2 py-1 rounded text-xs ${user.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-400' : 'bg-gray-500/20 text-gray-400'}">
-                            ${user.role}
+                    <td class="py-4 px-6 text-gray-400">${user.email || '-'}</td>
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${user.role === 'ADMIN' ? 'bg-accent-purple/20 text-accent-purple' : 'bg-dark-600 text-gray-400'}">
+                            ${user.role === 'ADMIN' ? 'مدير' : 'مستخدم'}
                         </span>
                     </td>
-                    <td class="py-4 px-4">
-                        <span class="px-2 py-1 rounded text-xs ${getSubscriptionClass(user.Subscription?.plan)}">
-                            ${user.Subscription?.plan || 'FREE'}
+                    <td class="py-4 px-6">
+                        <span class="px-3 py-1 rounded-full text-xs font-medium ${getPlanClass(user.Subscription?.plan)}">
+                            ${getPlanName(user.Subscription?.plan)}
                         </span>
                     </td>
-                    <td class="py-4 px-4 text-gray-300">${user.instances?.length || 0}</td>
-                    <td class="py-4 px-4 text-gray-300">${new Date(user.createdAt).toLocaleDateString('ar-SA')}</td>
-                    <td class="py-4 px-4">
-                        <div class="flex space-x-2 space-x-reverse">
-                            ${user.role !== 'ADMIN' ? `
-                                <button onclick="makeAdmin('${user.id}')" class="text-purple-400 hover:text-purple-300 text-sm">
-                                    ترقية لمسؤول
-                                </button>
-                            ` : `
-                                <button onclick="removeAdmin('${user.id}')" class="text-gray-400 hover:text-gray-300 text-sm">
-                                    إزالة الإدارة
-                                </button>
-                            `}
-                            <button onclick="deleteUser('${user.id}')" class="text-red-400 hover:text-red-300 text-sm">
-                                حذف
+                    <td class="py-4 px-6">
+                        <span class="bg-dark-600 px-2 py-1 rounded text-sm">${user.instances?.length || 0}</span>
+                    </td>
+                    <td class="py-4 px-6 text-gray-400 text-sm">${new Date(user.createdAt).toLocaleDateString('ar-SA')}</td>
+                    <td class="py-4 px-6">
+                        <div class="flex items-center gap-2">
+                            <button onclick="showUserDetails('${user.id}')" class="p-2 hover:bg-dark-600 rounded-lg transition" title="عرض">
+                                <i class="fas fa-eye text-gray-400"></i>
+                            </button>
+                            <button onclick="editUser('${user.id}')" class="p-2 hover:bg-dark-600 rounded-lg transition" title="تعديل">
+                                <i class="fas fa-edit text-accent-blue"></i>
+                            </button>
+                            <button onclick="deleteUser('${user.id}')" class="p-2 hover:bg-dark-600 rounded-lg transition" title="حذف">
+                                <i class="fas fa-trash text-accent-rose"></i>
                             </button>
                         </div>
                     </td>
@@ -196,12 +600,225 @@
             `).join('');
         }
 
-        function getSubscriptionClass(plan) {
-            switch (plan) {
-                case 'PRO': return 'bg-yellow-500/20 text-yellow-400';
-                case 'BASIC': return 'bg-blue-500/20 text-blue-400';
-                default: return 'bg-gray-500/20 text-gray-400';
+        function displayRecentUsers(users) {
+            const container = document.getElementById('recent-users');
+            container.innerHTML = users.map(user => `
+                <div class="flex items-center justify-between p-3 bg-dark-700/30 rounded-xl">
+                    <div class="flex items-center gap-3">
+                        <img src="${user.profileImageUrl || '/images/evolution-logo.png'}" class="w-10 h-10 rounded-full border-2 border-dark-600">
+                        <div>
+                            <p class="font-medium">${user.firstName || ''} ${user.lastName || ''}</p>
+                            <p class="text-sm text-gray-500">${user.email || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="text-left">
+                        <span class="px-2 py-1 rounded-full text-xs ${getPlanClass(user.Subscription?.plan)}">${getPlanName(user.Subscription?.plan)}</span>
+                        <p class="text-xs text-gray-500 mt-1">${new Date(user.createdAt).toLocaleDateString('ar-SA')}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function displayInstances(instances) {
+            const grid = document.getElementById('instances-grid');
+            
+            if (instances.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full text-center py-12 text-gray-500">
+                        <i class="fab fa-whatsapp text-6xl mb-4"></i>
+                        <p>لا توجد أجهزة مسجلة</p>
+                    </div>
+                `;
+                return;
             }
+
+            grid.innerHTML = instances.map(instance => {
+                const isOnline = instance.connectionStatus === 'open';
+                const ownerName = instance.owner ? `${instance.owner.firstName || ''} ${instance.owner.lastName || ''}`.trim() : 'غير معروف';
+                return `
+                    <div class="glass rounded-2xl p-6 border border-dark-600">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-accent-emerald/20 rounded-xl flex items-center justify-center">
+                                    <i class="fab fa-whatsapp text-accent-emerald text-xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">${instance.name}</h4>
+                                    <p class="text-xs text-gray-500">${instance.id.substring(0, 12)}...</p>
+                                </div>
+                            </div>
+                            <span class="flex items-center gap-1 text-xs ${isOnline ? 'text-accent-emerald' : 'text-gray-500'}">
+                                <span class="w-2 h-2 rounded-full ${isOnline ? 'bg-accent-emerald pulse-dot' : 'bg-gray-500'}"></span>
+                                ${isOnline ? 'متصل' : 'غير متصل'}
+                            </span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">المالك:</span>
+                                <span>${ownerName}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">الرقم:</span>
+                                <span dir="ltr">${instance.ownerJid?.split('@')[0] || '-'}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-500">الاسم:</span>
+                                <span>${instance.profileName || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getPlanClass(plan) {
+            switch (plan) {
+                case 'PRO': return 'bg-accent-amber/20 text-accent-amber';
+                case 'BASIC': return 'bg-accent-blue/20 text-accent-blue';
+                default: return 'bg-dark-600 text-gray-400';
+            }
+        }
+
+        function getPlanName(plan) {
+            switch (plan) {
+                case 'PRO': return 'احترافي';
+                case 'BASIC': return 'أساسي';
+                default: return 'مجاني';
+            }
+        }
+
+        function filterUsers() {
+            const search = document.getElementById('user-search').value.toLowerCase();
+            const role = document.getElementById('role-filter').value;
+            const plan = document.getElementById('plan-filter').value;
+
+            const filtered = allUsers.filter(user => {
+                const matchSearch = !search || 
+                    (user.firstName?.toLowerCase().includes(search)) ||
+                    (user.lastName?.toLowerCase().includes(search)) ||
+                    (user.email?.toLowerCase().includes(search));
+                const matchRole = !role || user.role === role;
+                const matchPlan = !plan || (user.Subscription?.plan || 'FREE') === plan;
+                return matchSearch && matchRole && matchPlan;
+            });
+
+            displayUsers(filtered);
+        }
+
+        function showPage(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`page-${page}`).classList.remove('hidden');
+            
+            document.querySelectorAll('.sidebar-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        function initCharts() {
+            const ctx1 = document.getElementById('usersChart').getContext('2d');
+            usersChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'],
+                    datasets: [{
+                        label: 'المستخدمين الجدد',
+                        data: [2, 4, 3, 5, 4, 6, allUsers.length],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#8b5cf6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#9ca3af' } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
+                    }
+                }
+            });
+
+            const freeCount = allUsers.filter(u => !u.Subscription?.plan || u.Subscription?.plan === 'FREE').length;
+            const basicCount = allUsers.filter(u => u.Subscription?.plan === 'BASIC').length;
+            const proCount = allUsers.filter(u => u.Subscription?.plan === 'PRO').length;
+
+            const ctx2 = document.getElementById('plansChart').getContext('2d');
+            plansChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: {
+                    labels: ['مجاني', 'أساسي', 'احترافي'],
+                    datasets: [{
+                        data: [freeCount || 1, basicCount, proCount],
+                        backgroundColor: ['#6b7280', '#3b82f6', '#f59e0b'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '70%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function showUserDetails(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            document.getElementById('modal-title').textContent = 'تفاصيل المستخدم';
+            document.getElementById('modal-content').innerHTML = `
+                <div class="text-center mb-6">
+                    <img src="${user.profileImageUrl || '/images/evolution-logo.png'}" class="w-20 h-20 rounded-full border-4 border-dark-600 mx-auto mb-3">
+                    <h4 class="text-xl font-bold">${user.firstName || ''} ${user.lastName || ''}</h4>
+                    <p class="text-gray-500">${user.email || '-'}</p>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between p-3 bg-dark-700 rounded-lg">
+                        <span class="text-gray-400">معرف المستخدم</span>
+                        <span class="font-mono text-sm">${user.id}</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-dark-700 rounded-lg">
+                        <span class="text-gray-400">الدور</span>
+                        <span class="${user.role === 'ADMIN' ? 'text-accent-purple' : ''}">${user.role === 'ADMIN' ? 'مدير' : 'مستخدم'}</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-dark-700 rounded-lg">
+                        <span class="text-gray-400">الخطة</span>
+                        <span class="${getPlanClass(user.Subscription?.plan)} px-2 py-0.5 rounded">${getPlanName(user.Subscription?.plan)}</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-dark-700 rounded-lg">
+                        <span class="text-gray-400">عدد الأجهزة</span>
+                        <span>${user.instances?.length || 0}</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-dark-700 rounded-lg">
+                        <span class="text-gray-400">تاريخ التسجيل</span>
+                        <span>${new Date(user.createdAt).toLocaleDateString('ar-SA')}</span>
+                    </div>
+                    <div class="flex justify-between p-3 bg-dark-700 rounded-lg">
+                        <span class="text-gray-400">مفتاح API</span>
+                        <span class="font-mono text-xs">${user.apiKey?.substring(0, 20)}...</span>
+                    </div>
+                </div>
+                <div class="mt-6 flex gap-3">
+                    ${user.role !== 'ADMIN' ? `
+                        <button onclick="makeAdmin('${user.id}')" class="flex-1 bg-accent-purple hover:bg-accent-purple/80 py-2 rounded-lg transition">
+                            <i class="fas fa-crown ml-2"></i>ترقية لمسؤول
+                        </button>
+                    ` : `
+                        <button onclick="removeAdmin('${user.id}')" class="flex-1 bg-dark-600 hover:bg-dark-500 py-2 rounded-lg transition">
+                            <i class="fas fa-user ml-2"></i>إزالة الإدارة
+                        </button>
+                    `}
+                    <button onclick="deleteUser('${user.id}')" class="bg-accent-rose/20 hover:bg-accent-rose/30 text-accent-rose px-4 py-2 rounded-lg transition">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            document.getElementById('user-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('user-modal').classList.add('hidden');
         }
 
         async function makeAdmin(userId) {
@@ -213,7 +830,8 @@
                     body: JSON.stringify({ role: 'ADMIN' })
                 });
                 if (response.ok) {
-                    loadUsers();
+                    closeModal();
+                    await loadUsers();
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -229,7 +847,8 @@
                     body: JSON.stringify({ role: 'USER' })
                 });
                 if (response.ok) {
-                    loadUsers();
+                    closeModal();
+                    await loadUsers();
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -243,13 +862,22 @@
                     method: 'DELETE'
                 });
                 if (response.ok) {
-                    loadUsers();
-                    loadStats();
+                    closeModal();
+                    await Promise.all([loadUsers(), loadStats()]);
                 }
             } catch (error) {
                 console.error('Error:', error);
             }
         }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        document.getElementById('user-modal').addEventListener('click', (e) => {
+            if (e.target.id === 'user-modal') closeModal();
+        });
 
         checkAdmin();
     </script>

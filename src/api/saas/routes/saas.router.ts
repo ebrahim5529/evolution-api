@@ -130,4 +130,14 @@ saasRouter.delete('/api/admin/users/:userId', isSaasAuthenticated, isSaasAdmin, 
   }
 });
 
+saasRouter.get('/api/admin/instances', isSaasAuthenticated, isSaasAdmin, async (req: any, res: Response) => {
+  try {
+    const instances = await saasStorage.getAllInstances();
+    res.json(instances);
+  } catch (error) {
+    console.error("Error fetching instances:", error);
+    res.status(500).json({ message: "Failed to fetch instances" });
+  }
+});
+
 export { saasRouter };

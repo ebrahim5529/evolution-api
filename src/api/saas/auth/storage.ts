@@ -177,6 +177,35 @@ class SaasStorage implements ISaasStorage {
       subscriptionStats
     };
   }
+
+  async getAllInstances() {
+    const instances = await prisma.instance.findMany({
+      select: {
+        id: true,
+        name: true,
+        connectionStatus: true,
+        ownerJid: true,
+        profileName: true,
+        profilePicUrl: true,
+        integration: true,
+        number: true,
+        clientName: true,
+        createdAt: true,
+        updatedAt: true,
+        userId: true,
+        owner: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return instances;
+  }
 }
 
 export const saasStorage = new SaasStorage();
