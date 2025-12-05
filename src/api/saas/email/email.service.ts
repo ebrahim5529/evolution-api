@@ -1,5 +1,5 @@
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const FROM_EMAIL = process.env.FROM_EMAIL || 'noreply@evolution-api.com';
+const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 const APP_URL = process.env.SERVER_URL || 'http://localhost:5000';
 
 interface EmailOptions {
