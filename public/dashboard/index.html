@@ -12,6 +12,13 @@
         .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
         .status-connected { color: #22c55e; }
         .status-disconnected { color: #ef4444; }
+        
+        /* Mobile Menu */
+        @media (max-width: 640px) {
+            .nav-buttons { flex-direction: column; gap: 0.5rem; }
+            .api-key-section { flex-direction: column; gap: 0.5rem; }
+            .api-key-section code { font-size: 0.7rem; }
+        }
     </style>
 </head>
 <body class="gradient-bg min-h-screen text-white">
@@ -26,18 +33,19 @@
         <div id="dashboard" class="hidden">
             <nav class="bg-black/30 border-b border-white/10">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
+                    <div class="flex flex-wrap justify-between items-center py-3 gap-3">
                         <div class="flex items-center">
                             <img src="/images/evolution-logo.png" alt="Evolution API" class="h-8 w-auto">
-                            <span class="mr-3 text-xl font-bold text-emerald-400">Evolution SaaS</span>
+                            <span class="mr-3 text-lg sm:text-xl font-bold text-emerald-400">Evolution SaaS</span>
                         </div>
-                        <div class="flex items-center space-x-4 space-x-reverse">
+                        <div class="flex items-center gap-2 sm:gap-4 nav-buttons">
                             <div id="user-info" class="flex items-center">
                                 <img id="user-avatar" src="" alt="" class="h-8 w-8 rounded-full">
-                                <span id="user-name" class="mr-2 text-sm"></span>
+                                <span id="user-name" class="mr-2 text-sm hidden sm:inline"></span>
                             </div>
-                            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
-                                تسجيل الخروج
+                            <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 sm:px-4 py-2 rounded-lg text-sm transition">
+                                <span class="hidden sm:inline">تسجيل الخروج</span>
+                                <span class="sm:hidden">خروج</span>
                             </button>
                         </div>
                     </div>
@@ -102,17 +110,19 @@
                     </div>
                 </div>
 
-                <div class="card rounded-xl p-6">
-                    <h2 class="text-xl font-bold mb-4">مفتاح API الخاص بك</h2>
+                <div class="card rounded-xl p-4 sm:p-6">
+                    <h2 class="text-lg sm:text-xl font-bold mb-4">مفتاح API الخاص بك</h2>
                     <p class="text-gray-400 text-sm mb-4">استخدم هذا المفتاح للوصول إلى Evolution API</p>
-                    <div class="flex items-center space-x-4 space-x-reverse">
-                        <code id="full-api-key" class="bg-black/30 px-4 py-2 rounded-lg font-mono text-sm flex-1">...</code>
-                        <button onclick="copyApiKey()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm transition">
-                            نسخ
-                        </button>
-                        <button onclick="regenerateApiKey()" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg text-sm transition">
-                            تجديد
-                        </button>
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 api-key-section">
+                        <code id="full-api-key" class="bg-black/30 px-3 sm:px-4 py-2 rounded-lg font-mono text-xs sm:text-sm flex-1 overflow-x-auto whitespace-nowrap">...</code>
+                        <div class="flex gap-2">
+                            <button onclick="copyApiKey()" class="flex-1 sm:flex-none bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm transition">
+                                نسخ
+                            </button>
+                            <button onclick="regenerateApiKey()" class="flex-1 sm:flex-none bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg text-sm transition">
+                                تجديد
+                            </button>
+                        </div>
                     </div>
                 </div>
 

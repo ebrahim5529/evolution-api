@@ -35,6 +35,17 @@
         .fade-in { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .modal-backdrop { background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+        
+        /* Responsive Sidebar */
+        @media (max-width: 1023px) {
+            #sidebar { transform: translateX(100%); }
+            #sidebar.open { transform: translateX(0); }
+            #main-content { margin-right: 0 !important; }
+        }
+        @media (min-width: 1024px) {
+            #sidebar { transform: translateX(0); }
+            #mobile-overlay { display: none !important; }
+        }
     </style>
 </head>
 <body class="bg-dark-900 text-white min-h-screen font-cairo">
@@ -50,7 +61,10 @@
         </div>
 
         <div id="admin-panel" class="hidden">
-            <aside id="sidebar" class="fixed right-0 top-0 h-full w-64 bg-dark-800 border-l border-dark-600 z-50 transition-all duration-300">
+            <!-- Mobile Overlay -->
+            <div id="mobile-overlay" class="fixed inset-0 bg-black/50 z-40 hidden lg:hidden" onclick="toggleSidebar()"></div>
+            
+            <aside id="sidebar" class="fixed right-0 top-0 h-full w-64 bg-dark-800 border-l border-dark-600 z-50 transition-transform duration-300">
                 <div class="p-6 border-b border-dark-600">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 bg-gradient-to-br from-accent-purple to-accent-blue rounded-xl flex items-center justify-center">
@@ -116,7 +130,7 @@
                 </div>
             </aside>
 
-            <main class="mr-64 min-h-screen">
+            <main id="main-content" class="lg:mr-64 min-h-screen">
                 <header class="sticky top-0 z-40 glass border-b border-dark-600">
                     <div class="flex items-center justify-between px-6 py-4">
                         <div class="flex items-center gap-4">
@@ -1151,7 +1165,9 @@
 
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
+            const overlay = document.getElementById('mobile-overlay');
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('hidden');
         }
 
         document.getElementById('user-modal').addEventListener('click', (e) => {
