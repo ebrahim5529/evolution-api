@@ -368,8 +368,25 @@ export class InstanceController {
     };
   }
 
-  public async fetchInstances({ instanceName, instanceId, number }: InstanceDto, key: string) {
+  public async fetchInstances({ instanceName, instanceId, number }: InstanceDto, key: string, userId?: string) {
     const env = this.configService.get<Auth>('AUTHENTICATION').API_KEY;
+
+    if (userId) {
+      const instancesByUser = await this.prismaRepository.instance.findMany({
+        where: {
+          userId: userId,
+          name: instanceName || undefined,
+          id: instanceId || undefined,
+        },
+      });
+
+      if (instancesByUser.length > 0) {
+        const names = instancesByUser.map((instance) => instance.name);
+        return this.waMonitor.instanceInfo(names);
+      }
+      
+      return [];
+    }
 
     if (env.KEY !== key) {
       const instancesByKey = await this.prismaRepository.instance.findMany({

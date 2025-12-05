@@ -12,6 +12,7 @@ declare global {
     interface Request {
       saasUserId?: string;
       isGlobalAdmin?: boolean;
+      authType?: 'global' | 'saas_user' | 'instance_token';
     }
   }
 }
@@ -27,6 +28,7 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
 
   if (env.KEY === key) {
     req.isGlobalAdmin = true;
+    req.authType = 'global';
     return next();
   }
 
@@ -40,6 +42,7 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
       if (saasUser) {
         req.saasUserId = saasUser.id;
         req.isGlobalAdmin = saasUser.role === 'ADMIN';
+        req.authType = 'saas_user';
         return next();
       }
     } catch (error) {
@@ -59,7 +62,7 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
       });
       if (instance) {
         if (instance.token === key) {
-          req.saasUserId = instance.userId || undefined;
+          req.authType = 'instance_token';
           return next();
         }
         
@@ -73,7 +76,7 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
           where: { token: key },
         });
         if (instanceByKey) {
-          req.saasUserId = instanceByKey.userId || undefined;
+          req.authType = 'instance_token';
           return next();
         }
       }
