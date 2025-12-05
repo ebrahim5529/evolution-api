@@ -29,9 +29,11 @@ enum SubscriptionPlan {
   FREE
   BASIC
   PRO
+  ENTERPRISE
 }
 
 enum SubscriptionStatus {
+  TRIAL
   ACTIVE
   INACTIVE
   CANCELLED
@@ -785,20 +787,29 @@ model EvoaiSetting {
 }
 
 model SaasUser {
-  id              String             @id @default(cuid())
-  email           String?            @unique @db.VarChar(255)
-  firstName       String?            @db.VarChar(100)
-  lastName        String?            @db.VarChar(100)
-  profileImageUrl String?            @db.VarChar(500)
-  role            UserRole           @default(USER)
-  apiKey          String?            @unique @db.VarChar(255)
-  createdAt       DateTime           @default(now()) @db.Timestamp
-  updatedAt       DateTime           @updatedAt @db.Timestamp
-  Subscription    Subscription?
-  instances       Instance[]
+  id                      String             @id @default(cuid())
+  username                String?            @unique @db.VarChar(50)
+  email                   String?            @unique @db.VarChar(255)
+  password                String?            @db.VarChar(255)
+  firstName               String?            @db.VarChar(100)
+  lastName                String?            @db.VarChar(100)
+  profileImageUrl         String?            @db.VarChar(500)
+  role                    UserRole           @default(USER)
+  apiKey                  String?            @unique @db.VarChar(255)
+  emailVerified           Boolean            @default(false)
+  verificationToken       String?            @db.VarChar(255)
+  verificationTokenExpiry DateTime?          @db.Timestamp
+  resetPasswordToken      String?            @db.VarChar(255)
+  resetPasswordExpiry     DateTime?          @db.Timestamp
+  createdAt               DateTime           @default(now()) @db.Timestamp
+  updatedAt               DateTime           @updatedAt @db.Timestamp
+  Subscription            Subscription?
+  instances               Instance[]
 
   @@index([email])
+  @@index([username])
   @@index([apiKey])
+  @@index([verificationToken])
 }
 
 model SaasSession {

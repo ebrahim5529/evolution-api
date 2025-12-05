@@ -5,8 +5,13 @@ import { UserRole, AuditAction } from '@prisma/client';
 import { join } from 'path';
 import { ROOT_DIR } from '@config/path.config';
 import { auditService } from '../audit/audit.service';
+import { authRouter } from './auth.router';
+import { subscriptionRouter } from './subscription.router';
 
 const saasRouter = Router();
+
+saasRouter.use('/auth', authRouter);
+saasRouter.use('/subscriptions', subscriptionRouter);
 
 const serveFile = (filePath: string) => (req: Request, res: Response) => {
   res.sendFile(join(ROOT_DIR, filePath));
@@ -21,6 +26,12 @@ saasRouter.get('/admin/', serveFile('public/admin/index.html'));
 saasRouter.get('/admin/*', serveFile('public/admin/index.html'));
 
 saasRouter.get('/landing', serveFile('public/landing.html'));
+
+saasRouter.get('/login', serveFile('public/login.html'));
+saasRouter.get('/register', serveFile('public/register.html'));
+saasRouter.get('/verify-email', serveFile('public/verify-email.html'));
+saasRouter.get('/forgot-password', serveFile('public/forgot-password.html'));
+saasRouter.get('/reset-password', serveFile('public/reset-password.html'));
 
 saasRouter.get('/api/auth/user', isSaasAuthenticated, async (req: any, res: Response) => {
   try {

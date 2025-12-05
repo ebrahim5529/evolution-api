@@ -155,10 +155,25 @@ To use the API:
 ### Multi-Tenancy System
 The API has been transformed into a complete SaaS platform with:
 
-**User Authentication:**
-- Replit Auth integration for user registration/login
-- JWT-based session management
+**User Authentication (Email/Password System):**
+- Traditional username/email/password registration
+- Email verification with confirmation links
+- JWT-based session management (7-day expiry)
+- Password reset functionality
 - Role-based access control (SUPER_ADMIN/ADMIN/USER)
+
+**Subscription System:**
+- 4-day automatic trial period after email verification
+- Admin-managed subscription renewal
+- Duration options: 1 month, 2 months, 1 year, 3 years
+- Plans: FREE (1 instance), BASIC (5), PRO (20), ENTERPRISE (100)
+- Automatic expiration detection
+
+**Email Service:**
+- Verification emails for new registrations
+- Password reset emails
+- Subscription expiry notifications
+- **Note:** Requires RESEND_API_KEY environment variable for production
 
 **Database Tables:**
 - `SaasUser` - User accounts with API keys
@@ -177,15 +192,35 @@ The API has been transformed into a complete SaaS platform with:
 - `/admin` - Admin panel for managing users and platform
 
 ### SaaS API Endpoints
+
+**Authentication Endpoints:**
 ```
-POST /saas/auth/session    # Start auth session
-GET  /saas/auth/callback   # Auth callback
-GET  /saas/auth/me         # Get current user
-POST /saas/auth/logout     # Logout user
-GET  /saas/users           # List all users (admin)
-GET  /saas/users/:id       # Get user details
-PUT  /saas/users/:id       # Update user
-DELETE /saas/users/:id     # Delete user
+POST /saas/auth/register           # Register new user (email/password)
+POST /saas/auth/login              # Login with email/username and password
+GET  /saas/auth/verify-email       # Verify email with token
+POST /saas/auth/resend-verification # Resend verification email
+POST /saas/auth/forgot-password    # Request password reset
+POST /saas/auth/reset-password     # Reset password with token
+GET  /saas/auth/me                 # Get current user (JWT required)
+POST /saas/auth/logout             # Logout user
+```
+
+**Subscription Endpoints (Admin only):**
+```
+GET  /saas/subscriptions/me          # Get current user subscription
+GET  /saas/subscriptions/all         # List all subscriptions (admin)
+GET  /saas/subscriptions/stats       # Subscription statistics
+GET  /saas/subscriptions/expiring    # Expiring subscriptions
+POST /saas/subscriptions/renew/:userId # Renew subscription (duration: 1_month, 2_months, 1_year, 3_years)
+POST /saas/subscriptions/cancel/:userId # Cancel subscription
+POST /saas/subscriptions/update-expired # Update expired subscriptions
+```
+
+**User Management (Admin):**
+```
+GET  /saas/api/admin/users           # List all users
+PATCH /saas/api/admin/users/:id/role # Update user role
+DELETE /saas/api/admin/users/:id     # Delete user
 ```
 
 ### Audit Log System (SUPER_ADMIN only)
@@ -207,12 +242,19 @@ GET  /api/admin/audit/recent # Get recent audit logs
 **Severity Levels:** INFO, WARNING, ERROR, CRITICAL
 
 ### Key Files
-- `src/api/saas/auth/replitAuth.ts` - Replit Auth integration
-- `src/api/saas/auth/storage.ts` - User storage/management
-- `src/api/saas/routes/saas.router.ts` - SaaS API routes
+- `src/api/saas/auth/emailAuth.service.ts` - Email/password authentication service
+- `src/api/saas/subscription/subscription.service.ts` - Subscription management
+- `src/api/saas/email/email.service.ts` - Email sending service
+- `src/api/saas/routes/auth.router.ts` - Authentication API routes
+- `src/api/saas/routes/subscription.router.ts` - Subscription API routes
+- `src/api/saas/routes/saas.router.ts` - Main SaaS router
 - `src/api/saas/audit/audit.service.ts` - Audit logging service
 - `src/api/guards/auth.guard.ts` - Authentication guard
-- `public/landing.html` - Landing page
+- `public/login.html` - Login page
+- `public/register.html` - Registration page
+- `public/verify-email.html` - Email verification page
+- `public/forgot-password.html` - Password reset request page
+- `public/reset-password.html` - Password reset page
 - `public/dashboard/index.html` - User dashboard
 - `public/admin/index.html` - Admin panel with audit log viewer
 
@@ -234,6 +276,12 @@ GET  /api/admin/audit/recent # Get recent audit logs
 13. ✅ Implemented three-tier role system (SUPER_ADMIN/ADMIN/USER)
 14. ✅ Added comprehensive audit logging system
 15. ✅ Created audit log viewer in admin panel (SUPER_ADMIN only)
+16. ✅ Replaced Replit Auth with email/password authentication system
+17. ✅ Added email verification with 24-hour token expiry
+18. ✅ Implemented 4-day trial period after email verification
+19. ✅ Created subscription management system (admin-controlled renewal)
+20. ✅ Built login, register, verify-email, forgot-password, and reset-password pages
+21. ✅ Added JWT-based authentication with 7-day expiry
 
 ### Verified Working
 - Server starts successfully on port 5000
