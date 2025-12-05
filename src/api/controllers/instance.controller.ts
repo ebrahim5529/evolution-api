@@ -34,7 +34,7 @@ export class InstanceController {
 
   private readonly logger = new Logger('InstanceController');
 
-  public async createInstance(instanceData: InstanceDto) {
+  public async createInstance(instanceData: InstanceDto, userId?: string) {
     try {
       const instance = channelController.init(instanceData, {
         configService: this.configService,
@@ -70,6 +70,7 @@ export class InstanceController {
         number: instanceData.number,
         businessId: instanceData.businessId,
         status: instanceData.status,
+        userId: userId || null,
       });
 
       instance.setInstance({

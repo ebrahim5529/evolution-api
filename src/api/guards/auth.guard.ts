@@ -7,6 +7,15 @@ import { NextFunction, Request, Response } from 'express';
 
 const logger = new Logger('GUARD');
 
+declare global {
+  namespace Express {
+    interface Request {
+      saasUserId?: string;
+      isGlobalAdmin?: boolean;
+    }
+  }
+}
+
 async function apikey(req: Request, _: Response, next: NextFunction) {
   const env = configService.get<Auth>('AUTHENTICATION').API_KEY;
   const key = req.get('apikey');
@@ -17,7 +26,25 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
   }
 
   if (env.KEY === key) {
+    req.isGlobalAdmin = true;
     return next();
+  }
+
+  if (key.startsWith('evo_')) {
+    try {
+      const saasUser = await prismaRepository.saasUser.findUnique({
+        where: { apiKey: key },
+        include: { Subscription: true }
+      });
+      
+      if (saasUser) {
+        req.saasUserId = saasUser.id;
+        req.isGlobalAdmin = saasUser.role === 'ADMIN';
+        return next();
+      }
+    } catch (error) {
+      logger.error(error);
+    }
   }
 
   if ((req.originalUrl.includes('/instance/create') || req.originalUrl.includes('/instance/fetchInstances')) && !key) {
@@ -30,8 +57,15 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
       const instance = await prismaRepository.instance.findUnique({
         where: { name: param.instanceName },
       });
-      if (instance.token === key) {
-        return next();
+      if (instance) {
+        if (instance.token === key) {
+          req.saasUserId = instance.userId || undefined;
+          return next();
+        }
+        
+        if (req.saasUserId && instance.userId === req.saasUserId) {
+          return next();
+        }
       }
     } else {
       if (req.originalUrl.includes('/instance/fetchInstances') && db.SAVE_DATA.INSTANCE) {
@@ -39,6 +73,7 @@ async function apikey(req: Request, _: Response, next: NextFunction) {
           where: { token: key },
         });
         if (instanceByKey) {
+          req.saasUserId = instanceByKey.userId || undefined;
           return next();
         }
       }
