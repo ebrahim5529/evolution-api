@@ -6,6 +6,8 @@ import { ProviderFiles } from '@api/provider/sessions';
 import { PrismaRepository } from '@api/repository/repository.service';
 import { HttpStatus, router } from '@api/routes/index.router';
 import { eventManager, waMonitor } from '@api/server.module';
+import { setupSaasAuth } from '@api/saas/auth/replitAuth';
+import { saasRouter } from '@api/saas/routes/saas.router';
 import {
   Auth,
   configService,
@@ -66,10 +68,27 @@ async function bootstrap() {
 
   app.set('view engine', 'hbs');
   app.set('views', join(ROOT_DIR, 'views'));
-  app.use(express.static(join(ROOT_DIR, 'public')));
+
+  // Setup SaaS authentication (Replit Auth) - BEFORE static files
+  try {
+    await setupSaasAuth(app);
+    logger.info('SaaS Auth - ON');
+  } catch (error) {
+    logger.warn('SaaS Auth - Failed to initialize (running without auth)');
+  }
+
+  // SaaS routes - BEFORE static files to override directory handling
+  app.use('/', saasRouter);
+
+  // Static files (but dashboard/admin handled by saasRouter)
+  app.use(express.static(join(ROOT_DIR, 'public'), { 
+    index: false,
+    redirect: false 
+  }));
 
   app.use('/store', express.static(join(ROOT_DIR, 'store')));
 
+  // Evolution API routes
   app.use('/', router);
 
   app.use(

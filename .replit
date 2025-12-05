@@ -90,13 +90,13 @@ args = "npm run dev:server"
 waitForPort = 5000
 
 [[ports]]
+localPort = 5000
+externalPort = 80
+
+[[ports]]
 localPort = 8080
 externalPort = 8080
 
 [[ports]]
-localPort = 36505
-externalPort = 80
-
-[[ports]]
-localPort = 5000
-externalPort = 80
+localPort = 38591
+externalPort = 3000

@@ -19,6 +19,24 @@ enum InstanceConnectionStatus {
   connecting
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  CANCELLED
+  EXPIRED
+}
+
 enum DeviceMessage {
   ios
   android
@@ -77,6 +95,8 @@ model Instance {
   disconnectionAt         DateTime?                @db.Timestamp
   createdAt               DateTime?                @default(now()) @db.Timestamp
   updatedAt               DateTime?                @updatedAt @db.Timestamp
+  userId                  String?                  @db.VarChar(100)
+  owner                   SaasUser?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   Chat                    Chat[]
   Contact                 Contact[]
   Message                 Message[]
@@ -111,6 +131,8 @@ model Instance {
   N8nSetting              N8nSetting[]
   Evoai                   Evoai[]
   EvoaiSetting            EvoaiSetting?
+
+  @@index([userId])
 }
 
 model Session {
@@ -759,4 +781,46 @@ model EvoaiSetting {
   evoaiIdFallback String?   @db.VarChar(100)
   Instance        Instance  @relation(fields: [instanceId], references: [id], onDelete: Cascade)
   instanceId      String    @unique
+}
+
+model SaasUser {
+  id              String             @id @default(cuid())
+  email           String?            @unique @db.VarChar(255)
+  firstName       String?            @db.VarChar(100)
+  lastName        String?            @db.VarChar(100)
+  profileImageUrl String?            @db.VarChar(500)
+  role            UserRole           @default(USER)
+  apiKey          String?            @unique @db.VarChar(255)
+  createdAt       DateTime           @default(now()) @db.Timestamp
+  updatedAt       DateTime           @updatedAt @db.Timestamp
+  Subscription    Subscription?
+  instances       Instance[]
+
+  @@index([email])
+  @@index([apiKey])
+}
+
+model SaasSession {
+  sid       String   @id @db.VarChar(255)
+  sess      Json     @db.JsonB
+  expire    DateTime @db.Timestamp
+
+  @@index([expire])
+}
+
+model Subscription {
+  id             String             @id @default(cuid())
+  plan           SubscriptionPlan   @default(FREE)
+  status         SubscriptionStatus @default(ACTIVE)
+  maxInstances   Int                @default(1)
+  stripeCustomerId   String?        @db.VarChar(255)
+  stripeSubscriptionId String?      @db.VarChar(255)
+  currentPeriodStart DateTime?      @db.Timestamp
+  currentPeriodEnd   DateTime?      @db.Timestamp
+  createdAt      DateTime           @default(now()) @db.Timestamp
+  updatedAt      DateTime           @updatedAt @db.Timestamp
+  user           SaasUser           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String             @unique
+
+  @@index([stripeCustomerId])
 }

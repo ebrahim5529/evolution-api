@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolution SaaS - لوحة التحكم</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Cairo', sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); }
+        .card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); }
+        .status-connected { color: #22c55e; }
+        .status-disconnected { color: #ef4444; }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen text-white">
+    <div id="app">
+        <div id="loading" class="flex items-center justify-center min-h-screen">
+            <div class="text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+                <p class="text-gray-400">جاري التحميل...</p>
+            </div>
+        </div>
+
+        <div id="dashboard" class="hidden">
+            <nav class="bg-black/30 border-b border-white/10">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-16">
+                        <div class="flex items-center">
+                            <img src="/images/evolution-logo.png" alt="Evolution API" class="h-8 w-auto">
+                            <span class="mr-3 text-xl font-bold text-emerald-400">Evolution SaaS</span>
+                        </div>
+                        <div class="flex items-center space-x-4 space-x-reverse">
+                            <div id="user-info" class="flex items-center">
+                                <img id="user-avatar" src="" alt="" class="h-8 w-8 rounded-full">
+                                <span id="user-name" class="mr-2 text-sm"></span>
+                            </div>
+                            <a href="/api/logout" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg text-sm transition">
+                                تسجيل الخروج
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">الأجهزة المتصلة</p>
+                                <p id="instances-count" class="text-3xl font-bold text-emerald-400">0</p>
+                            </div>
+                            <div class="bg-emerald-500/20 p-3 rounded-full">
+                                <svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">الخطة الحالية</p>
+                                <p id="subscription-plan" class="text-3xl font-bold text-blue-400">FREE</p>
+                            </div>
+                            <div class="bg-blue-500/20 p-3 rounded-full">
+                                <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card rounded-xl p-6">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-400 text-sm">مفتاح API</p>
+                                <p id="api-key" class="text-sm font-mono text-yellow-400 truncate max-w-[150px]">...</p>
+                            </div>
+                            <button onclick="copyApiKey()" class="bg-yellow-500/20 p-3 rounded-full hover:bg-yellow-500/30 transition">
+                                <svg class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6 mb-8">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-xl font-bold">أجهزة WhatsApp الخاصة بك</h2>
+                        <a href="/manager" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm transition">
+                            إدارة الأجهزة
+                        </a>
+                    </div>
+                    
+                    <div id="instances-list" class="space-y-4">
+                        <p class="text-gray-400 text-center py-8">لا توجد أجهزة متصلة حالياً</p>
+                    </div>
+                </div>
+
+                <div class="card rounded-xl p-6">
+                    <h2 class="text-xl font-bold mb-4">مفتاح API الخاص بك</h2>
+                    <p class="text-gray-400 text-sm mb-4">استخدم هذا المفتاح للوصول إلى Evolution API</p>
+                    <div class="flex items-center space-x-4 space-x-reverse">
+                        <code id="full-api-key" class="bg-black/30 px-4 py-2 rounded-lg font-mono text-sm flex-1">...</code>
+                        <button onclick="copyApiKey()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg text-sm transition">
+                            نسخ
+                        </button>
+                        <button onclick="regenerateApiKey()" class="bg-yellow-600 hover:bg-yellow-700 px-4 py-2 rounded-lg text-sm transition">
+                            تجديد
+                        </button>
+                    </div>
+                </div>
+
+                <div id="admin-section" class="hidden mt-8">
+                    <div class="card rounded-xl p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-xl font-bold text-purple-400">لوحة الإدارة</h2>
+                        </div>
+                        <a href="/admin" class="inline-block bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-lg transition">
+                            الذهاب إلى لوحة الإدارة
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        async function loadUser() {
+            try {
+                const response = await fetch('/api/auth/user');
+                if (!response.ok) {
+                    window.location.href = '/landing';
+                    return;
+                }
+                currentUser = await response.json();
+                displayUser();
+            } catch (error) {
+                console.error('Error loading user:', error);
+                window.location.href = '/landing';
+            }
+        }
+
+        function displayUser() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            
+            document.getElementById('user-name').textContent = currentUser.firstName || currentUser.email || 'مستخدم';
+            document.getElementById('user-avatar').src = currentUser.profileImageUrl || '/images/evolution-logo.png';
+            document.getElementById('api-key').textContent = currentUser.apiKey?.substring(0, 15) + '...';
+            document.getElementById('full-api-key').textContent = currentUser.apiKey || 'غير متوفر';
+            
+            if (currentUser.role === 'ADMIN') {
+                document.getElementById('admin-section').classList.remove('hidden');
+            }
+
+            loadInstances();
+            loadSubscription();
+        }
+
+        async function loadInstances() {
+            try {
+                const response = await fetch('/api/user/instances');
+                if (response.ok) {
+                    const instances = await response.json();
+                    document.getElementById('instances-count').textContent = instances.length;
+                    displayInstances(instances);
+                }
+            } catch (error) {
+                console.error('Error loading instances:', error);
+            }
+        }
+
+        function displayInstances(instances) {
+            const container = document.getElementById('instances-list');
+            if (instances.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center py-8">لا توجد أجهزة متصلة حالياً. اذهب إلى مدير الأجهزة لإنشاء جهاز جديد.</p>';
+                return;
+            }
+
+            container.innerHTML = instances.map(instance => `
+                <div class="bg-black/20 rounded-lg p-4 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <img src="${instance.profilePicUrl || '/images/evolution-logo.png'}" alt="" class="h-12 w-12 rounded-full ml-4">
+                        <div>
+                            <p class="font-semibold">${instance.name}</p>
+                            <p class="text-sm text-gray-400">${instance.number || 'غير متصل'}</p>
+                        </div>
+                    </div>
+                    <span class="${instance.connectionStatus === 'open' ? 'status-connected' : 'status-disconnected'} text-sm">
+                        ${instance.connectionStatus === 'open' ? 'متصل' : 'غير متصل'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        async function loadSubscription() {
+            try {
+                const response = await fetch('/api/user/subscription');
+                if (response.ok) {
+                    const subscription = await response.json();
+                    document.getElementById('subscription-plan').textContent = subscription?.plan || 'FREE';
+                }
+            } catch (error) {
+                console.error('Error loading subscription:', error);
+            }
+        }
+
+        function copyApiKey() {
+            const apiKey = document.getElementById('full-api-key').textContent;
+            navigator.clipboard.writeText(apiKey);
+            alert('تم نسخ مفتاح API!');
+        }
+
+        async function regenerateApiKey() {
+            if (!confirm('هل أنت متأكد من تجديد مفتاح API؟ سيتوقف المفتاح القديم عن العمل.')) {
+                return;
+            }
+            try {
+                const response = await fetch('/api/user/apikey/regenerate', { method: 'POST' });
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('api-key').textContent = data.apiKey.substring(0, 15) + '...';
+                    document.getElementById('full-api-key').textContent = data.apiKey;
+                    alert('تم تجديد مفتاح API بنجاح!');
+                }
+            } catch (error) {
+                console.error('Error regenerating API key:', error);
+                alert('حدث خطأ أثناء تجديد مفتاح API');
+            }
+        }
+
+        loadUser();
+    </script>
+</body>
+</html>
