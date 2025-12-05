@@ -145,7 +145,7 @@
       }
 
       try {
-        const response = await fetch(`/saas/auth/verify-email?token=${token}`);
+        const response = await fetch(`/auth/verify-email?token=${token}`);
         const data = await response.json();
 
         if (!response.ok) {

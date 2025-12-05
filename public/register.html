@@ -233,7 +233,7 @@
       };
 
       try {
-        const response = await fetch('/saas/auth/register', {
+        const response = await fetch('/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -260,9 +260,27 @@
       }
     });
 
-    if (localStorage.getItem('token')) {
-      window.location.href = '/dashboard';
+    async function checkExistingToken() {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      try {
+        const response = await fetch('/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          window.location.href = '/dashboard';
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      } catch (e) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     }
+    checkExistingToken();
   </script>
 </body>
 </html>
