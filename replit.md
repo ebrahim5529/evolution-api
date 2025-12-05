@@ -150,16 +150,67 @@ To use the API:
 3. Set up webhook endpoints if required
 4. Review security settings before production use
 
+## SaaS Platform Features (Dec 5, 2025)
+
+### Multi-Tenancy System
+The API has been transformed into a complete SaaS platform with:
+
+**User Authentication:**
+- Replit Auth integration for user registration/login
+- JWT-based session management
+- Role-based access control (USER/ADMIN)
+
+**Database Tables:**
+- `SaasUser` - User accounts with API keys
+- `Subscription` - User subscription plans
+- `Instance.userId` - Links WhatsApp instances to users
+
+**Authentication Types:**
+- `global` - Admin API key (full access)
+- `saas_user` - User API key (evo_* prefix, tenant-scoped)
+- `instance_token` - Instance-specific tokens (single instance access)
+
+**Frontend Pages:**
+- `/landing` - Landing page with login/register
+- `/dashboard` - User dashboard for managing instances
+- `/admin` - Admin panel for managing users and platform
+
+### SaaS API Endpoints
+```
+POST /saas/auth/session    # Start auth session
+GET  /saas/auth/callback   # Auth callback
+GET  /saas/auth/me         # Get current user
+POST /saas/auth/logout     # Logout user
+GET  /saas/users           # List all users (admin)
+GET  /saas/users/:id       # Get user details
+PUT  /saas/users/:id       # Update user
+DELETE /saas/users/:id     # Delete user
+```
+
+### Key Files
+- `src/api/saas/auth/replitAuth.ts` - Replit Auth integration
+- `src/api/saas/auth/storage.ts` - User storage/management
+- `src/api/saas/routes/saas.router.ts` - SaaS API routes
+- `src/api/guards/auth.guard.ts` - Authentication guard
+- `public/landing.html` - Landing page
+- `public/dashboard/index.html` - User dashboard
+- `public/admin/index.html` - Admin panel
+
 ## Recent Setup (Dec 5, 2025)
 
 ### What Was Done
 1. ✅ Installed all npm dependencies (1150 packages)
 2. ✅ Created and configured PostgreSQL database
 3. ✅ Generated Prisma client
-4. ✅ Applied 56 database migrations successfully
+4. ✅ Applied 57 database migrations successfully
 5. ✅ Configured environment variables
 6. ✅ Set up development workflow
 7. ✅ Verified API is running and accessible
+8. ✅ Implemented SaaS multi-tenancy system
+9. ✅ Added Replit Auth for user authentication
+10. ✅ Created landing page, dashboard, and admin panel
+11. ✅ Linked users to WhatsApp instances
+12. ✅ Fixed security issue with instance token scoping
 
 ### Verified Working
 - Server starts successfully on port 5000
@@ -168,6 +219,9 @@ To use the API:
 - Socket.io working
 - API responds to HTTP requests
 - All migrations applied without errors
+- SaaS authentication system working
+- User-to-instance linking working
+- Admin panel accessible
 
 ## Support & Documentation
 - Official Documentation: https://doc.evolution-api.com
