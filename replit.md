@@ -5,7 +5,7 @@ Evolution API is a comprehensive WhatsApp REST API built on Baileys library with
 
 **Current Status:** Fully configured and running
 **Version:** 2.3.6
-**API Endpoint:** http://localhost:8080
+**API Endpoint:** http://localhost:5000
 
 ## Project Architecture
 
@@ -18,7 +18,7 @@ Evolution API is a comprehensive WhatsApp REST API built on Baileys library with
 - **Build Tool:** tsup with tsx for development
 
 ### Key Components
-- **API Server:** Express-based REST API running on port 8080
+- **API Server:** Express-based REST API running on port 5000
 - **Database:** PostgreSQL with 56 migrations applied
 - **Caching:** Local cache enabled (Redis disabled)
 - **WebSocket:** Socket.io for real-time events
@@ -30,9 +30,9 @@ Evolution API is a comprehensive WhatsApp REST API built on Baileys library with
 All configuration is stored in Replit environment variables (shared environment):
 
 **Server Configuration:**
-- `SERVER_PORT=8080` - API server port
+- `SERVER_PORT=5000` - API server port
 - `SERVER_TYPE=http` - Protocol type
-- `SERVER_URL=http://localhost:8080` - Base URL
+- `SERVER_URL=http://localhost:5000` - Base URL
 
 **Database:**
 - `DATABASE_PROVIDER=postgresql` - Database type
@@ -52,7 +52,7 @@ All configuration is stored in Replit environment variables (shared environment)
 The project runs automatically via the configured workflow:
 - **Workflow Name:** Evolution API Server
 - **Command:** `npm run dev:server`
-- **Port:** 8080
+- **Port:** 5000
 - **Auto-restart:** Enabled on file changes
 
 ### Available Scripts
@@ -82,13 +82,13 @@ npm run db:studio     # Visual database browser
 ## API Endpoints
 
 ### Base URL
-- Development: `http://localhost:8080`
+- Development: `http://localhost:5000`
 - Documentation: Available at `/manager` endpoint
 - Official Docs: https://doc.evolution-api.com
 
 ### Health Check
 ```bash
-curl http://localhost:8080/
+curl http://localhost:5000/
 ```
 
 Response includes:
@@ -162,7 +162,7 @@ To use the API:
 7. ✅ Verified API is running and accessible
 
 ### Verified Working
-- Server starts successfully on port 8080
+- Server starts successfully on port 5000
 - Database connection established
 - Prisma repository initialized
 - Socket.io working

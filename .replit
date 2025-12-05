@@ -10,8 +10,8 @@ channel = "stable-25_05"
 [userenv.shared]
 SERVER_NAME = "evolution"
 SERVER_TYPE = "http"
-SERVER_PORT = "8080"
-SERVER_URL = "http://localhost:8080"
+SERVER_PORT = "5000"
+SERVER_URL = "http://localhost:5000"
 SERVER_DISABLE_DOCS = "false"
 SERVER_DISABLE_MANAGER = "false"
 CORS_ORIGIN = "*"
@@ -81,18 +81,22 @@ args = "Evolution API Server"
 name = "Evolution API Server"
 author = "agent"
 
+[workflows.workflow.metadata]
+outputType = "webview"
+
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev:server"
-waitForPort = 8080
-
-[workflows.workflow.metadata]
-outputType = "console"
+waitForPort = 5000
 
 [[ports]]
 localPort = 8080
 externalPort = 8080
 
 [[ports]]
-localPort = 46157
+localPort = 36505
+externalPort = 80
+
+[[ports]]
+localPort = 5000
 externalPort = 80
